@@ -17,6 +17,7 @@ import (
 )
 
 type mockDBClustersClient struct {
+	DBClustersAPI
 	DescribeDBClustersOutput rds.DescribeDBClustersOutput
 	DescribeDBClustersError  error
 	DeleteDBClusterOutput    rds.DeleteDBClusterOutput

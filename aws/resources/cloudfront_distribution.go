@@ -43,6 +43,7 @@ func NewCloudfrontDistributions() AwsResource {
 		},
 		Lister: listCloudfrontDistributions,
 		Nuker:  resource.SequentialDeleter(nukeCloudfrontDistribution),
+		Stop:   cloudfrontDistributionStopHooks(),
 	})
 }
 

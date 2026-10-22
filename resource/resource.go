@@ -84,6 +84,9 @@ type Resource[C any] struct {
 	// PermissionVerifier performs optional dry-run permission checks (nil = skip verification)
 	PermissionVerifier func(ctx context.Context, client C, id *string) error
 
+	// Stop holds optional stop/start hooks (nil = this type can only be nuked). See StopHooks.
+	Stop *StopHooks[C]
+
 	// === Runtime state (set during execution) ===
 
 	// Client is the typed cloud service client

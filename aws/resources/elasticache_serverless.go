@@ -18,6 +18,8 @@ type ElasticCacheServerlessAPI interface {
 	DeleteServerlessCache(ctx context.Context, params *elasticache.DeleteServerlessCacheInput, optFns ...func(*elasticache.Options)) (*elasticache.DeleteServerlessCacheOutput, error)
 	DescribeServerlessCaches(ctx context.Context, params *elasticache.DescribeServerlessCachesInput, optFns ...func(*elasticache.Options)) (*elasticache.DescribeServerlessCachesOutput, error)
 	ListTagsForResource(ctx context.Context, params *elasticache.ListTagsForResourceInput, optFns ...func(*elasticache.Options)) (*elasticache.ListTagsForResourceOutput, error)
+	// Stop/start (elasticache_serverless_stop.go).
+	ModifyServerlessCache(ctx context.Context, params *elasticache.ModifyServerlessCacheInput, optFns ...func(*elasticache.Options)) (*elasticache.ModifyServerlessCacheOutput, error)
 }
 
 // NewElasticCacheServerless creates a new ElastiCache Serverless resource using the generic resource pattern.
@@ -35,6 +37,7 @@ func NewElasticCacheServerless() AwsResource {
 		},
 		Lister: listElasticCacheServerless,
 		Nuker:  resource.SimpleBatchDeleter(deleteElasticCacheServerless),
+		Stop:   serverlessStopHooks(),
 	})
 }
 

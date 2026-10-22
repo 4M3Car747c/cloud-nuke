@@ -50,23 +50,30 @@ const (
 )
 
 func NewSession(region string) (aws.Config, error) {
+	return newSessionWith(nil, region)
+}
+
+// newSessionWith creates a session using provider, or externalcreds when provider is nil.
+func newSessionWith(provider func(region string) (aws.Config, error), region string) (aws.Config, error) {
 	// Note: As there is no actual region named `global` we have to pick one valid region and create the session.
 	if region == GlobalRegion {
 		v, ok := os.LookupEnv("CLOUD_NUKE_AWS_GLOBAL_REGION")
 		if !ok {
 			v = DefaultRegion
 		}
-		return externalcreds.Get(v)
+		region = v
 	}
-
+	if provider != nil {
+		return provider(region)
+	}
 	return externalcreds.Get(region)
 }
 
 // Try a describe regions command with the most likely enabled regions
-func retryDescribeRegions() (*ec2.DescribeRegionsOutput, error) {
+func retryDescribeRegions(provider func(region string) (aws.Config, error)) (*ec2.DescribeRegionsOutput, error) {
 	regionsToTry := append(OptInNotRequiredRegions, GovCloudRegions...)
 	for _, region := range regionsToTry {
-		sessionCnf, err := NewSession(region)
+		sessionCnf, err := newSessionWith(provider, region)
 		if err != nil {
 			continue
 		}
@@ -83,6 +90,10 @@ func retryDescribeRegions() (*ec2.DescribeRegionsOutput, error) {
 
 // GetEnabledRegions - Get all regions that are enabled (DescribeRegions excludes those not enabled by default)
 func GetEnabledRegions() ([]string, error) {
+	return getEnabledRegions(nil)
+}
+
+func getEnabledRegions(provider func(region string) (aws.Config, error)) ([]string, error) {
 	var regionNames []string
 
 	// We don't want to depend on a default region being set, so instead we
@@ -91,7 +102,7 @@ func GetEnabledRegions() ([]string, error) {
 	// Corner case: user has intentionally disabled one or more regions that are
 	// enabled by default. If that region is chosen, API calls will fail.
 	// Therefore we retry until one of the regions works.
-	regions, err := retryDescribeRegions()
+	regions, err := retryDescribeRegions(provider)
 	if err != nil {
 		return nil, err
 	}

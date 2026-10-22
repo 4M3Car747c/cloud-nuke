@@ -33,6 +33,7 @@ type EKSClustersAPI interface {
 	ListClusters(ctx context.Context, params *eks.ListClustersInput, optFns ...func(*eks.Options)) (*eks.ListClustersOutput, error)
 	ListFargateProfiles(ctx context.Context, params *eks.ListFargateProfilesInput, optFns ...func(*eks.Options)) (*eks.ListFargateProfilesOutput, error)
 	ListNodegroups(ctx context.Context, params *eks.ListNodegroupsInput, optFns ...func(*eks.Options)) (*eks.ListNodegroupsOutput, error)
+	UpdateNodegroupConfig(ctx context.Context, params *eks.UpdateNodegroupConfigInput, optFns ...func(*eks.Options)) (*eks.UpdateNodegroupConfigOutput, error)
 }
 
 // NewEKSClusters creates a new EKS Clusters resource using the generic resource pattern.
@@ -52,6 +53,7 @@ func NewEKSClusters() AwsResource {
 		},
 		Lister: listEKSClusters,
 		Nuker:  deleteEKSClusters,
+		Stop:   eksClusterStopHooks(),
 	})
 }
 

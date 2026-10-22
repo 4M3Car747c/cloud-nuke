@@ -15,6 +15,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/amp v1.31.0
 	github.com/aws/aws-sdk-go-v2/service/apigateway v1.28.10
 	github.com/aws/aws-sdk-go-v2/service/apigatewayv2 v1.24.16
+	github.com/aws/aws-sdk-go-v2/service/applicationautoscaling v1.41.14
 	github.com/aws/aws-sdk-go-v2/service/apprunner v1.32.14
 	github.com/aws/aws-sdk-go-v2/service/autoscaling v1.51.11
 	github.com/aws/aws-sdk-go-v2/service/backup v1.40.9

@@ -17,6 +17,14 @@ type LambdaFunctionsAPI interface {
 	DeleteFunction(ctx context.Context, params *lambda.DeleteFunctionInput, optFns ...func(*lambda.Options)) (*lambda.DeleteFunctionOutput, error)
 	ListFunctions(ctx context.Context, params *lambda.ListFunctionsInput, optFns ...func(*lambda.Options)) (*lambda.ListFunctionsOutput, error)
 	ListTags(ctx context.Context, params *lambda.ListTagsInput, optFns ...func(*lambda.Options)) (*lambda.ListTagsOutput, error)
+
+	// Stop/start (see lambda_stop.go).
+	GetFunctionConcurrency(ctx context.Context, params *lambda.GetFunctionConcurrencyInput, optFns ...func(*lambda.Options)) (*lambda.GetFunctionConcurrencyOutput, error)
+	PutFunctionConcurrency(ctx context.Context, params *lambda.PutFunctionConcurrencyInput, optFns ...func(*lambda.Options)) (*lambda.PutFunctionConcurrencyOutput, error)
+	DeleteFunctionConcurrency(ctx context.Context, params *lambda.DeleteFunctionConcurrencyInput, optFns ...func(*lambda.Options)) (*lambda.DeleteFunctionConcurrencyOutput, error)
+	ListProvisionedConcurrencyConfigs(ctx context.Context, params *lambda.ListProvisionedConcurrencyConfigsInput, optFns ...func(*lambda.Options)) (*lambda.ListProvisionedConcurrencyConfigsOutput, error)
+	PutProvisionedConcurrencyConfig(ctx context.Context, params *lambda.PutProvisionedConcurrencyConfigInput, optFns ...func(*lambda.Options)) (*lambda.PutProvisionedConcurrencyConfigOutput, error)
+	DeleteProvisionedConcurrencyConfig(ctx context.Context, params *lambda.DeleteProvisionedConcurrencyConfigInput, optFns ...func(*lambda.Options)) (*lambda.DeleteProvisionedConcurrencyConfigOutput, error)
 }
 
 // NewLambdaFunctions creates a new Lambda Functions resource using the generic resource pattern.
@@ -33,6 +41,7 @@ func NewLambdaFunctions() AwsResource {
 		},
 		Lister: listLambdaFunctions,
 		Nuker:  resource.SimpleBatchDeleter(deleteLambdaFunction),
+		Stop:   lambdaStopHooks(),
 	})
 }
 

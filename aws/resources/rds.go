@@ -18,6 +18,8 @@ type DBInstancesAPI interface {
 	DescribeDBInstances(ctx context.Context, params *rds.DescribeDBInstancesInput, optFns ...func(*rds.Options)) (*rds.DescribeDBInstancesOutput, error)
 	ModifyDBInstance(ctx context.Context, params *rds.ModifyDBInstanceInput, optFns ...func(*rds.Options)) (*rds.ModifyDBInstanceOutput, error)
 	DeleteDBInstance(ctx context.Context, params *rds.DeleteDBInstanceInput, optFns ...func(*rds.Options)) (*rds.DeleteDBInstanceOutput, error)
+	StopDBInstance(ctx context.Context, params *rds.StopDBInstanceInput, optFns ...func(*rds.Options)) (*rds.StopDBInstanceOutput, error)
+	StartDBInstance(ctx context.Context, params *rds.StartDBInstanceInput, optFns ...func(*rds.Options)) (*rds.StartDBInstanceOutput, error)
 }
 
 // NewDBInstances creates a new DBInstances resource using the generic resource pattern.
@@ -34,6 +36,7 @@ func NewDBInstances() AwsResource {
 		},
 		Lister: listDBInstances,
 		Nuker:  resource.SequentialDeleteThenWaitAll(deleteDBInstance, waitForDBInstancesDeleted),
+		Stop:   dbInstanceStopHooks(),
 	})
 }
 

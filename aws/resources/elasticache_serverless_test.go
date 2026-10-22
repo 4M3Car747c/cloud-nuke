@@ -15,6 +15,7 @@ import (
 )
 
 type mockedElasticCacheServerlessService struct {
+	ElasticCacheServerlessAPI
 	DeleteServerlessCacheOutput    elasticache.DeleteServerlessCacheOutput
 	DescribeServerlessCachesOutput elasticache.DescribeServerlessCachesOutput
 	TagsByARN                      map[string][]types.Tag

@@ -67,7 +67,7 @@ func GetAllResources(c context.Context, query *Query, configObj config.Config, c
 	setupGroup := new(errgroup.Group)
 	for _, region := range query.Regions {
 		setupGroup.Go(func() error {
-			cloudNukeSession, err := NewSession(region)
+			cloudNukeSession, err := query.session(region)
 			if err != nil {
 				return err
 			}

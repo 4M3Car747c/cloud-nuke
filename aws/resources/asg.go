@@ -16,6 +16,8 @@ import (
 type ASGroupsAPI interface {
 	DescribeAutoScalingGroups(ctx context.Context, params *autoscaling.DescribeAutoScalingGroupsInput, optFns ...func(*autoscaling.Options)) (*autoscaling.DescribeAutoScalingGroupsOutput, error)
 	DeleteAutoScalingGroup(ctx context.Context, params *autoscaling.DeleteAutoScalingGroupInput, optFns ...func(*autoscaling.Options)) (*autoscaling.DeleteAutoScalingGroupOutput, error)
+	SuspendProcesses(ctx context.Context, params *autoscaling.SuspendProcessesInput, optFns ...func(*autoscaling.Options)) (*autoscaling.SuspendProcessesOutput, error)
+	ResumeProcesses(ctx context.Context, params *autoscaling.ResumeProcessesInput, optFns ...func(*autoscaling.Options)) (*autoscaling.ResumeProcessesOutput, error)
 }
 
 // NewASGroups creates a new ASGroups resource using the generic resource pattern.
@@ -32,6 +34,7 @@ func NewASGroups() AwsResource {
 		},
 		Lister: listASGroups,
 		Nuker:  resource.SequentialDeleteThenWaitAll(deleteASG, waitForASGsDeleted),
+		Stop:   asgStopHooks(),
 	})
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 	"github.com/aws/aws-sdk-go-v2/service/ecs/types"
 	"github.com/gruntwork-io/cloud-nuke/config"
@@ -20,6 +21,25 @@ type ECSServicesAPI interface {
 	DescribeServices(ctx context.Context, params *ecs.DescribeServicesInput, optFns ...func(*ecs.Options)) (*ecs.DescribeServicesOutput, error)
 	DeleteService(ctx context.Context, params *ecs.DeleteServiceInput, optFns ...func(*ecs.Options)) (*ecs.DeleteServiceOutput, error)
 	UpdateService(ctx context.Context, params *ecs.UpdateServiceInput, optFns ...func(*ecs.Options)) (*ecs.UpdateServiceOutput, error)
+
+	// Application Auto Scaling, used by the stop hooks to pause service auto scaling
+	// (see ecs_service_stop.go).
+	DescribeScalableTargets(ctx context.Context, params *applicationautoscaling.DescribeScalableTargetsInput, optFns ...func(*applicationautoscaling.Options)) (*applicationautoscaling.DescribeScalableTargetsOutput, error)
+	RegisterScalableTarget(ctx context.Context, params *applicationautoscaling.RegisterScalableTargetInput, optFns ...func(*applicationautoscaling.Options)) (*applicationautoscaling.RegisterScalableTargetOutput, error)
+}
+
+// ecsServicesClient is the ECS client plus the Application Auto Scaling calls ECSServicesAPI needs.
+type ecsServicesClient struct {
+	*ecs.Client
+	scaling *applicationautoscaling.Client
+}
+
+func (c ecsServicesClient) DescribeScalableTargets(ctx context.Context, params *applicationautoscaling.DescribeScalableTargetsInput, optFns ...func(*applicationautoscaling.Options)) (*applicationautoscaling.DescribeScalableTargetsOutput, error) {
+	return c.scaling.DescribeScalableTargets(ctx, params, optFns...)
+}
+
+func (c ecsServicesClient) RegisterScalableTarget(ctx context.Context, params *applicationautoscaling.RegisterScalableTargetInput, optFns ...func(*applicationautoscaling.Options)) (*applicationautoscaling.RegisterScalableTargetOutput, error) {
+	return c.scaling.RegisterScalableTarget(ctx, params, optFns...)
 }
 
 // ecsServicesResource holds state needed for ECS service operations.
@@ -40,7 +60,7 @@ func NewECSServices() AwsResource {
 
 	r.InitClient = WrapAwsInitClient(func(res *resource.Resource[ECSServicesAPI], cfg aws.Config) {
 		res.Scope.Region = cfg.Region
-		res.Client = ecs.NewFromConfig(cfg)
+		res.Client = ecsServicesClient{Client: ecs.NewFromConfig(cfg), scaling: applicationautoscaling.NewFromConfig(cfg)}
 		// Reset state on init
 		r.serviceClusterMap = make(map[string]string)
 	})
@@ -56,6 +76,10 @@ func NewECSServices() AwsResource {
 	r.Nuker = func(ctx context.Context, client ECSServicesAPI, scope resource.Scope, resourceType string, ids []*string) []resource.NukeResult {
 		return deleteECSServices(ctx, client, scope, resourceType, ids, r.serviceClusterMap)
 	}
+
+	r.Stop = ecsServiceStopHooks(func(serviceArn string) string {
+		return r.serviceClusterMap[serviceArn]
+	})
 
 	return &AwsResourceAdapter[ECSServicesAPI]{Resource: r.Resource}
 }

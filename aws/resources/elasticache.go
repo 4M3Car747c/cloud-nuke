@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
 	"github.com/aws/aws-sdk-go-v2/service/elasticache"
 	"github.com/aws/aws-sdk-go-v2/service/elasticache/types"
 	"github.com/gruntwork-io/cloud-nuke/config"
@@ -22,6 +23,14 @@ type ElasticachesAPI interface {
 	DeleteCacheCluster(ctx context.Context, params *elasticache.DeleteCacheClusterInput, optFns ...func(*elasticache.Options)) (*elasticache.DeleteCacheClusterOutput, error)
 	DeleteReplicationGroup(ctx context.Context, params *elasticache.DeleteReplicationGroupInput, optFns ...func(*elasticache.Options)) (*elasticache.DeleteReplicationGroupOutput, error)
 	ListTagsForResource(ctx context.Context, params *elasticache.ListTagsForResourceInput, optFns ...func(*elasticache.Options)) (*elasticache.ListTagsForResourceOutput, error)
+
+	// Stop/start (elasticache_stop.go).
+	ModifyReplicationGroup(ctx context.Context, params *elasticache.ModifyReplicationGroupInput, optFns ...func(*elasticache.Options)) (*elasticache.ModifyReplicationGroupOutput, error)
+	DecreaseReplicaCount(ctx context.Context, params *elasticache.DecreaseReplicaCountInput, optFns ...func(*elasticache.Options)) (*elasticache.DecreaseReplicaCountOutput, error)
+	IncreaseReplicaCount(ctx context.Context, params *elasticache.IncreaseReplicaCountInput, optFns ...func(*elasticache.Options)) (*elasticache.IncreaseReplicaCountOutput, error)
+	ModifyCacheCluster(ctx context.Context, params *elasticache.ModifyCacheClusterInput, optFns ...func(*elasticache.Options)) (*elasticache.ModifyCacheClusterOutput, error)
+	// GetMetricStatistics is CloudWatch's; see elasticacheStopClient.
+	GetMetricStatistics(ctx context.Context, params *cloudwatch.GetMetricStatisticsInput, optFns ...func(*cloudwatch.Options)) (*cloudwatch.GetMetricStatisticsOutput, error)
 }
 
 // NewElasticaches creates a new Elasticaches resource using the generic resource pattern.
@@ -32,7 +41,7 @@ func NewElasticaches() AwsResource {
 		BatchSize: DefaultBatchSize,
 		InitClient: WrapAwsInitClient(func(r *resource.Resource[ElasticachesAPI], cfg aws.Config) {
 			r.Scope.Region = cfg.Region
-			r.Client = elasticache.NewFromConfig(cfg)
+			r.Client = newElasticacheStopClient(cfg)
 		}),
 		ConfigGetter: func(c config.Config) config.ResourceType {
 			return c.ElastiCache
@@ -40,6 +49,7 @@ func NewElasticaches() AwsResource {
 		Lister: listElasticaches,
 		// Use SequentialDeleter since each deletion involves waiters
 		Nuker: resource.SequentialDeleter(deleteElasticacheCluster),
+		Stop:  elasticacheStopHooks(),
 	})
 }
 

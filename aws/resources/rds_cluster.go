@@ -18,6 +18,9 @@ type DBClustersAPI interface {
 	DeleteDBCluster(ctx context.Context, params *rds.DeleteDBClusterInput, optFns ...func(*rds.Options)) (*rds.DeleteDBClusterOutput, error)
 	DescribeDBClusters(ctx context.Context, params *rds.DescribeDBClustersInput, optFns ...func(*rds.Options)) (*rds.DescribeDBClustersOutput, error)
 	ModifyDBCluster(ctx context.Context, params *rds.ModifyDBClusterInput, optFns ...func(*rds.Options)) (*rds.ModifyDBClusterOutput, error)
+	DescribeDBInstances(ctx context.Context, params *rds.DescribeDBInstancesInput, optFns ...func(*rds.Options)) (*rds.DescribeDBInstancesOutput, error)
+	StopDBCluster(ctx context.Context, params *rds.StopDBClusterInput, optFns ...func(*rds.Options)) (*rds.StopDBClusterOutput, error)
+	StartDBCluster(ctx context.Context, params *rds.StartDBClusterInput, optFns ...func(*rds.Options)) (*rds.StartDBClusterOutput, error)
 }
 
 // NewDBClusters creates a new RDS DB Clusters resource using the generic resource pattern.
@@ -34,6 +37,7 @@ func NewDBClusters() AwsResource {
 		},
 		Lister: listDBClusters,
 		Nuker:  resource.SequentialDeleteThenWaitAll(deleteDBCluster, waitForDBClustersDeleted),
+		Stop:   dbClusterStopHooks(),
 	})
 }
 

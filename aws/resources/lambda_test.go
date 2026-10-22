@@ -15,6 +15,7 @@ import (
 )
 
 type mockLambdaClient struct {
+	LambdaFunctionsAPI
 	DeleteFunctionOutput lambda.DeleteFunctionOutput
 	ListFunctionsOutput  lambda.ListFunctionsOutput
 	TagsByArn            map[string]map[string]string

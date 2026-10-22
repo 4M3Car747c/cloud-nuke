@@ -1017,3 +1017,27 @@ func TestShouldIncludeBasedOnTag_NilTagsSafety(t *testing.T) {
 	r2 := ResourceType{}
 	assert.True(t, r2.ShouldIncludeBasedOnTag(nil))
 }
+
+func TestIgnoreProtectionTags(t *testing.T) {
+	future := time.Now().Add(24 * time.Hour).Format(CloudNukeAfterTimeFormat)
+	tagged := ResourceValue{Tags: map[string]string{
+		DefaultAwsResourceExclusionTagKey: "true",
+		CloudNukeAfterExclusionTagKey:     future,
+	}}
+	afterOnly := ResourceValue{Tags: map[string]string{CloudNukeAfterExclusionTagKey: future}}
+
+	c := Config{}
+	require.False(t, c.EC2.ShouldInclude(tagged))
+	require.False(t, c.EC2.ShouldInclude(afterOnly))
+
+	c.IgnoreProtectionTags()
+	for name, rt := range map[string]ResourceType{
+		"ec2": c.EC2, "asg": c.AutoScalingGroup, "rds-instance": c.DBInstances.ResourceType,
+		"rds-cluster": c.DBClusters.ResourceType, "ecs-service": c.ECSService, "eks-cluster": c.EKSCluster,
+		"elasticache": c.ElastiCache, "elasticache-serverless": c.ElastiCacheServerless,
+		"lambda": c.LambdaFunction, "cloudfront-distribution": c.CloudFrontDistribution,
+	} {
+		require.True(t, rt.ShouldInclude(tagged), name)
+		require.True(t, rt.ShouldInclude(afterOnly), name)
+	}
+}

@@ -16,6 +16,7 @@ import (
 
 // mockASGroupsClient implements ASGroupsAPI for testing.
 type mockASGroupsClient struct {
+	ASGroupsAPI
 	DescribeAutoScalingGroupsOutput autoscaling.DescribeAutoScalingGroupsOutput
 	DeleteAutoScalingGroupOutput    autoscaling.DeleteAutoScalingGroupOutput
 }

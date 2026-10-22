@@ -359,6 +359,15 @@ func (c *Config) AddEC2DefaultOnly(flag bool) {
 	}
 }
 
+// IgnoreProtectionTags makes every resource type ignore the cloud-nuke-excluded and
+// cloud-nuke-after tags. Use it when the people who can tag resources must not be able to
+// opt them out, e.g. when stopping an account on behalf of its operator.
+func (c *Config) IgnoreProtectionTags() {
+	for _, rt := range c.allResourceTypes() {
+		rt.ignoreProtectionTags = true
+	}
+}
+
 // AddIncludeTags applies global tag include filters to all resource types.
 // This merges CLI-provided tags with any existing per-resource-type include tags
 // from the config file, with config file tags taking precedence on conflicts.
@@ -402,6 +411,10 @@ type ResourceType struct {
 	ExcludeRule        FilterRule `yaml:"exclude"`
 	Timeout            string     `yaml:"timeout"`
 	ProtectUntilExpire *bool      `yaml:"protect_until_expire"`
+
+	// ignoreProtectionTags disables the cloud-nuke-excluded and cloud-nuke-after tag checks.
+	// Set through Config.IgnoreProtectionTags.
+	ignoreProtectionTags bool
 }
 
 type FilterRule struct {
@@ -617,7 +630,7 @@ func (r ResourceType) ShouldIncludeBasedOnTag(tags map[string]string) bool {
 	// Handle exclude rule first
 	exclusionTag := r.getExclusionTag()
 	exclusionTagValue := r.getExclusionTagValue()
-	if value, ok := tags[exclusionTag]; ok {
+	if value, ok := tags[exclusionTag]; ok && !r.ignoreProtectionTags {
 		if matches(strings.ToLower(value), []Expression{*exclusionTagValue}) {
 			return false
 		}
@@ -628,7 +641,7 @@ func (r ResourceType) ShouldIncludeBasedOnTag(tags map[string]string) bool {
 		return false
 	}
 
-	if r.ProtectUntilExpire == nil || *r.ProtectUntilExpire {
+	if !r.ignoreProtectionTags && (r.ProtectUntilExpire == nil || *r.ProtectUntilExpire) {
 		// Check if the tags contain "cloud-nuke-after" and if the date is before today.
 		if value, ok := tags[CloudNukeAfterExclusionTagKey]; ok {
 			nukeDate, err := ParseTimestamp(value)

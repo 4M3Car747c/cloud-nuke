@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/gruntwork-io/cloud-nuke/config"
 )
 
@@ -21,6 +22,23 @@ type Query struct {
 	DefaultOnly          bool
 	IncludeTags          map[string]config.Expression
 	Parallelism          int
+
+	// ConfigProvider supplies credentials for this query only. Nil falls back to the
+	// process-wide externalcreds provider. Setting it lets several accounts be scanned,
+	// stopped or started concurrently in one process.
+	ConfigProvider func(region string) (aws.Config, error)
+
+	// IgnoreProtectionTags makes StopAllResources ignore the cloud-nuke-excluded and
+	// cloud-nuke-after tags (see config.Config.IgnoreProtectionTags).
+	IgnoreProtectionTags bool
+}
+
+// session returns the AWS config for region using the query's ConfigProvider, if any.
+func (q *Query) session(region string) (aws.Config, error) {
+	if q == nil {
+		return NewSession(region)
+	}
+	return newSessionWith(q.ConfigProvider, region)
 }
 
 // Validate ensures the configured values for a Query are valid, returning an error if there are
@@ -33,7 +51,7 @@ func (q *Query) Validate() error {
 
 	q.ResourceTypes = resourceTypes
 
-	regions, err := GetEnabledRegions()
+	regions, err := getEnabledRegions(q.ConfigProvider)
 	if err != nil {
 		return CouldNotDetermineEnabledRegionsError{Underlying: err}
 	}

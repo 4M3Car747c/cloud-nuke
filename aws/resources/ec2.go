@@ -20,6 +20,8 @@ type EC2InstancesAPI interface {
 	DescribeAddresses(ctx context.Context, params *ec2.DescribeAddressesInput, optFns ...func(*ec2.Options)) (*ec2.DescribeAddressesOutput, error)
 	ReleaseAddress(ctx context.Context, params *ec2.ReleaseAddressInput, optFns ...func(*ec2.Options)) (*ec2.ReleaseAddressOutput, error)
 	TerminateInstances(ctx context.Context, params *ec2.TerminateInstancesInput, optFns ...func(*ec2.Options)) (*ec2.TerminateInstancesOutput, error)
+	StopInstances(ctx context.Context, params *ec2.StopInstancesInput, optFns ...func(*ec2.Options)) (*ec2.StopInstancesOutput, error)
+	StartInstances(ctx context.Context, params *ec2.StartInstancesInput, optFns ...func(*ec2.Options)) (*ec2.StartInstancesOutput, error)
 }
 
 // NewEC2Instances creates a new EC2 Instances resource using the generic resource pattern.
@@ -41,6 +43,7 @@ func NewEC2Instances() AwsResource {
 			terminateEC2Instance,
 			waitForEC2InstanceTerminated,
 		),
+		Stop: ec2InstanceStopHooks(),
 	})
 }
 
